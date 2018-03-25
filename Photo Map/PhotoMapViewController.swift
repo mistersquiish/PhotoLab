@@ -12,7 +12,9 @@ import CoreLocation
 import AddressBookUI
 import MessageUI
 
-class PhotoMapViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate, LocationsViewControllerDelegate {
+class PhotoMapViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate, LocationsViewControllerDelegate, MKMapViewDelegate {
+    
+    var image = UIImage(named: "camera")
     
     @IBOutlet weak var mapView: MKMapView!
     
@@ -27,7 +29,6 @@ class PhotoMapViewController: UIViewController, UIImagePickerControllerDelegate,
             print("Camera 🚫 available so we will use photo library instead")
             vc.sourceType = .photoLibrary
         }
-        
         self.present(vc, animated: true, completion: nil)
     }
     
@@ -38,6 +39,7 @@ class PhotoMapViewController: UIViewController, UIImagePickerControllerDelegate,
         let sfRegion = MKCoordinateRegionMake(CLLocationCoordinate2DMake(37.783333, -122.416667),
                                               MKCoordinateSpanMake(0.1, 0.1))
         mapView.setRegion(sfRegion, animated: false)
+        mapView.delegate = self
 
     }
 
@@ -53,6 +55,7 @@ class PhotoMapViewController: UIViewController, UIImagePickerControllerDelegate,
         let editedImage = info[UIImagePickerControllerEditedImage] as! UIImage
         
         // Do something with the images (based on your use case)
+        self.image = editedImage
         
         // Dismiss UIImagePickerController to go back to your original view controller
         dismiss(animated: true, completion: nil)
@@ -62,15 +65,15 @@ class PhotoMapViewController: UIViewController, UIImagePickerControllerDelegate,
     
     func locationsPickedLocation(controller: LocationsViewController, latitude: NSNumber, longitude: NSNumber) {
         let locationCoordinate = CLLocationCoordinate2D(latitude: CLLocationDegrees(latitude), longitude: CLLocationDegrees(longitude))
-        let annotation = MKPointAnnotation()
+        let annotation = PhotoAnnotation()
         annotation.coordinate = locationCoordinate
-        annotation.title = "Picture!"
+        annotation.title = "Latitude: \(Double(round(100*Double(latitude))/100)) Longitude: \(Double(round(100*Double(longitude))/100))"
+        annotation.photo = image
         mapView.addAnnotation(annotation)
     }
     
-    func mapView(mapView: MKMapView, viewForAnnotation annotation: MKAnnotation) -> MKAnnotationView? {
+    func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
         let reuseID = "myAnnotationView"
-        
         var annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: reuseID)
         if (annotationView == nil) {
             annotationView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: reuseID)
@@ -79,8 +82,7 @@ class PhotoMapViewController: UIViewController, UIImagePickerControllerDelegate,
         }
         
         let imageView = annotationView?.leftCalloutAccessoryView as! UIImageView
-        imageView.image = UIImage(named: "camera")
-        
+        imageView.image = image
         return annotationView
     }
     
